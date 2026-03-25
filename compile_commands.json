@@ -1,0 +1,26 @@
+[
+  {
+    "file": "src/main.c",
+    "arguments": [
+      "gcc",
+      "-std=c23",
+      "-D_GNU_SOURCE",
+      "-I",
+      "include",
+      "-O0",
+      "-ggdb",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fsanitize=address",
+      "-fno-omit-frame-pointer",
+      "-DDEBUG",
+      "-c",
+      "src/main.c",
+      "-o",
+      "build/debug/main.o"
+    ],
+    "directory": "/home/notrya/dev/C/nexus",
+    "output": "build/debug/main.o"
+  }
+]
