@@ -4,7 +4,7 @@
 #include "core/server.h"
 #include <sys/epoll.h>
 
-constexpr int MAX_EVENTS = 64;
+enum { MAX_EVENTS = 64 };
 
 typedef struct {
     struct epoll_event ev;

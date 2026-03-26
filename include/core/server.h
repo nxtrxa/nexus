@@ -4,7 +4,7 @@
 #include "utils/types.h"
 #include <netinet/in.h>
 
-constexpr int EPOLL_SIZE = 1024;
+enum { SERVER_BACKLOG = SOMAXCONN };
 
 typedef struct {
     struct sockaddr_in addr;
@@ -15,6 +15,7 @@ typedef struct {
 } Server;
 
 Server* server_init(int, const char*);
+void server_destroy(Server*);
 void server_cli_handler(Server* restrict);
 
 #endif // SERVER_H
