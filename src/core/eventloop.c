@@ -3,8 +3,8 @@
 
 #include <errno.h>
 
-void eventloop(Server* __s) {
-    EventLoop el = {
+void eventloop(server_instance __s) {
+    struct eventloop el = {
         .ev = {
             .events = EPOLLIN,
             .data.fd = __s->fd,
@@ -31,9 +31,9 @@ void eventloop(Server* __s) {
         }
         for (int i = 0; i < nfds; ++i) {
             if (el.events[i].data.fd == __s->fd) {
-                server_cli_handler(__s);
+                server_handler(__s);
             } else {
-                Connection *conn = el.events[i].data.ptr;
+                struct connection *conn = el.events[i].data.ptr;
                 conn_event_handler(conn, el.events[i].events, __s->epfd);
             }
         }

@@ -11,12 +11,12 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-Server* server_init(int epfd, const char* __p) {
+server_instance server_init(int epfd, const char* __p) {
     if (epfd < 0) {
         return NULL;
     }
 
-    Server* __s = calloc(1, sizeof *__s);
+    server_instance __s = calloc(1, sizeof *__s);
     if (!__s) {
         return NULL;
     }
@@ -28,9 +28,6 @@ Server* server_init(int epfd, const char* __p) {
         .sin_port = htons(__s->port),
         .sin_addr.s_addr = htonl(INADDR_ANY),
     };
-    int opt   = 1;
-
-
 
     if ((__s->fd = socket(__s->addr.sin_family, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0) {
         perror("socket");
@@ -38,6 +35,7 @@ Server* server_init(int epfd, const char* __p) {
         return NULL;
     }
 
+    int opt = 1;
     if (setsockopt(__s->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt) < 0) {
         perror("setsockopt");
         close(__s->fd);
@@ -61,7 +59,7 @@ Server* server_init(int epfd, const char* __p) {
     return __s;
 }
 
-void server_destroy(Server* __s) {
+void server_destroy(server_instance __s) {
     if (!__s) {
         return;
     }
@@ -77,7 +75,7 @@ void server_destroy(Server* __s) {
     free(__s);
 }
 
-void server_cli_handler(Server *restrict __s) {
+void server_handler(struct server *restrict __s) {
     for (;;) {
         struct sockaddr_in cli_addr;
         socklen_t addrlen = sizeof cli_addr;
@@ -91,7 +89,7 @@ void server_cli_handler(Server *restrict __s) {
             return;
         }
 
-        Connection* conn = conn_init(cli_fd);
+        struct connection* conn = conn_init(cli_fd);
         if (!conn) {
             close(cli_fd);
             continue;

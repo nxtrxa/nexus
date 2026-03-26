@@ -6,11 +6,12 @@
 
 enum { MAX_EVENTS = 64 };
 
-typedef struct {
+#define eventloop_instance
+struct eventloop {
     struct epoll_event ev;
     struct epoll_event events[MAX_EVENTS];
-} EventLoop;
+};
 
-void eventloop(Server*);
+void eventloop(server_instance);
 
 #endif // EVENTLOOP_H

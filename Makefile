@@ -63,11 +63,11 @@ clean:
 
 # Run release
 run: $(EXEC)
-	./$(EXEC) serve 8080
+	./$(EXEC) serve 4040
 
 # Run debug
 run_dbg: $(EXEC)_dbg
-	./$(EXEC)_dbg serve 8080
+	./$(EXEC)_dbg serve 4040
 
 compile_commands:
 	bear -- make debug

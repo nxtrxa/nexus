@@ -13,6 +13,9 @@
     X(METHOD_HEAD)      \
     X(METHOD_OPTIONS)   \
     X(METHOD_UNKNOWN)   \
+    X(METHOD_PATCH)     \
+    X(METHOD_TRACE)     \
+    X(METHOD_CONNECT)
 
 #define X(I) I,
 typedef enum {

@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
     char port_str[8] = {0};
     snprintf(port_str, sizeof port_str, "%d", port);
-    Server* s = server_init(epfd, port_str);
+    server_instance s = server_init(epfd, port_str);
     if (!s) {
         close(epfd);
         return 1;

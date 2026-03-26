@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/epoll.h>
 
 #include "http/request.h"
@@ -32,7 +31,9 @@ typedef enum {
     WRITING,
 } ConnState;
 
-typedef struct {
+
+#define connection_instance struct connection*
+struct connection {
     char wbuff[WRITE_BUFFER_SIZE];
     char rbuff[READ_BUFFER_SIZE];
     ConnState state;
@@ -42,9 +43,9 @@ typedef struct {
     fd_t fd;
     bool keep_alive;
     Request req;
-} Connection;
+};
 
-Connection* conn_init(fd_t);
-void conn_event_handler(Connection*, uint32_t, fd_t);
+connection_instance conn_init(fd_t);
+void conn_event_handler(connection_instance, uint32_t, fd_t);
 
 #endif // CONNECTION_H

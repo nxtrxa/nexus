@@ -6,16 +6,17 @@
 
 enum { SERVER_BACKLOG = SOMAXCONN };
 
-typedef struct {
+#define server_instance struct server*
+struct server {
     struct sockaddr_in addr;
     socklen_t addr_len;
     fd_t epfd;
     port_t port;
     fd_t fd;
-} Server;
+};
 
-Server* server_init(int, const char*);
-void server_destroy(Server*);
-void server_cli_handler(Server* restrict);
+server_instance server_init(int, const char*);
+void server_destroy(server_instance);
+void server_handler(server_instance restrict);
 
 #endif // SERVER_H
