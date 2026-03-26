@@ -44,7 +44,7 @@ static void conn_write(Connection* restrict conn, fd_t epfd) {
 
 static void conn_process(Connection* restrict conn, fd_t epfd) {
     char* end_headers = strstr(conn->rbuff, "\r\n\r\n");
-    if (end_headers == nullptr) {
+    if (end_headers == NULL) {
         return;
     }
 
@@ -79,7 +79,7 @@ Connection* conn_init(fd_t fd) {
     }
     *conn = (Connection) {
         .fd = fd,
-        .state = WRITING,
+        .state = READING_HEADERS,
         .keep_alive = false,
     };
     return conn;

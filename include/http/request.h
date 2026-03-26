@@ -2,7 +2,7 @@
 #define REQUEST_H
 
 #include <stddef.h>
-#include "utils/attributes.h"
+#include <stdint.h>
 #include "utils/types.h"
 
 #define HTTP_METHODS    \
@@ -15,7 +15,7 @@
     X(METHOD_UNKNOWN)   \
 
 #define X(I) I,
-typedef enum : uint8_t {
+typedef enum {
     HTTP_METHODS
 } HttpMethod;
 #undef X

@@ -21,10 +21,12 @@
     request_init(&(conn)->req);  \
 } while(0)
 
-constexpr ssize_t WRITE_BUFFER_SIZE = 4 * 1024;
-constexpr ssize_t READ_BUFFER_SIZE = 4 * 1024;
+enum {
+    WRITE_BUFFER_SIZE = 4 * 1024,
+    READ_BUFFER_SIZE = 4 * 1024,
+};
 
-typedef enum : uint8_t {
+typedef enum {
     READING_HEADERS,
     READING_BODY,
     WRITING,
@@ -46,4 +48,3 @@ Connection* conn_init(fd_t);
 void conn_event_handler(Connection*, uint32_t, fd_t);
 
 #endif // CONNECTION_H
-

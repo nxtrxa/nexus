@@ -1,6 +1,8 @@
 #include "core/eventloop.h"
 #include "core/connection.h"
 
+#include <errno.h>
+
 void eventloop(Server* __s) {
     EventLoop el = {
         .ev = {
@@ -21,6 +23,9 @@ void eventloop(Server* __s) {
     for (;;) {
         int nfds = epoll_wait(__s->epfd, el.events, MAX_EVENTS, -1);
         if (nfds < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             perror("epoll_wait");
             break;
         }
