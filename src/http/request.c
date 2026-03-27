@@ -26,7 +26,7 @@ void request_free(request_instance restrict req) {
 void request_add_header(request_instance restrict req, const char* name, const char* value) {
     if (req->header_count >= req->header_cap) {
         size_t new_cap = req->header_cap ? req->header_cap * 2 : 16;
-        header_instance new_h = realloc(req->headers, new_cap * sizeof(struct request));
+        header_instance new_h = realloc(req->headers, new_cap * sizeof(struct header));
         if (!new_h) return;
         req->headers = new_h;
         req->header_cap = new_cap;
