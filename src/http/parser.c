@@ -89,11 +89,6 @@ int parse_request(Request *req, const char *data, size_t len) {
     const char *p = data;
     const char *end = data + len;
 
-    // Reset request (but not freeing existing? We assume req is already initialized)
-    // Actually we should free previous data if any. We'll require caller to call request_free first.
-    request_init(req); // but that will leak previous if not freed. Better to have caller call request_free.
-    // For now, we'll just allocate new.
-
     if (parse_method(&p, end, &req->method) < 0) return -1;
     if (parse_path(&p, end, &req->path) < 0) return -1;
     if (parse_version(&p, end, &req->version) < 0) return -1;
@@ -110,6 +105,5 @@ int parse_request(Request *req, const char *data, size_t len) {
         if (*p == '\n') { p++; break; }
         if (parse_header_line(&p, end, req) < 0) return -1;
     }
-    if (p == end) return 1; // incomplete
     return 0;
 }

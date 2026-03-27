@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS_COMMON 	= -std=c23 -D_GNU_SOURCE -I $(INCLUDE_DIR)
+CFLAGS_COMMON 	= -std=c2x -D_GNU_SOURCE -I $(INCLUDE_DIR)
 CFLAGS_RELEASE 	= -O2 -DNDEBUG -flto -Wall -Wextra
 CFLAGS_DEBUG   	= -O0 -ggdb -Wall -Wextra -Werror -fsanitize=address -fno-omit-frame-pointer -DDEBUG
 LDFLAGS_RELEASE = -flto

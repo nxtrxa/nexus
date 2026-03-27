@@ -1,6 +1,46 @@
 #include "core/connection.h"
+#include "http/parser.h"
+#include "http/response.h"
+#include "routes/routes.h"
+
+static void conn_write(Connection* restrict conn, fd_t epfd);
+
+static void conn_build_and_queue_response(Connection* restrict conn, fd_t epfd, Response* res) {
+    char* raw = response_build(res);
+    if (!raw) {
+        static const char fallback[] =
+            "HTTP/1.1 500 Internal Server Error\r\n"
+            "Content-Length: 21\r\n"
+            "Content-Type: text/plain\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            "Internal Server Error";
+
+        size_t fallback_len = sizeof(fallback) - 1;
+        memcpy(conn->wbuff, fallback, fallback_len);
+        conn->wlen = fallback_len;
+        conn->keep_alive = false;
+        conn->state = WRITING;
+        return;
+    }
+
+    size_t res_len = strlen(raw);
+    if (res_len > sizeof conn->wbuff) {
+        res_len = sizeof conn->wbuff;
+        conn->keep_alive = false;
+    }
+
+    memcpy(conn->wbuff, raw, res_len);
+    conn->wlen = res_len;
+    conn->wsent = 0;
+    conn->state = WRITING;
+    free(raw);
+
+    conn_write(conn, epfd);
+}
 
 static void conn_close(Connection* restrict conn) {
+    request_free(&conn->req);
     close(conn->fd);
     free(conn);
 }
@@ -44,30 +84,51 @@ static void conn_write(Connection* restrict conn, fd_t epfd) {
 
 static void conn_process(Connection* restrict conn, fd_t epfd) {
     char* end_headers = strstr(conn->rbuff, "\r\n\r\n");
-    if (end_headers == nullptr) {
+    if (end_headers == NULL) {
         return;
     }
 
+    request_free(&conn->req);
+    request_init(&conn->req);
 
-    http_res_t res =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 13\r\n"
-        "Content-Type: text/plain\r\n"
-        "Connection: keep-alive\r\n"
-        "\r\n"
-        "Hello, World!";
+    int parsed = parse_request(&conn->req, conn->rbuff, conn->rlen);
+    if (parsed != 0) {
+        static const char bad_request[] =
+            "HTTP/1.1 400 Bad Request\r\n"
+            "Content-Length: 11\r\n"
+            "Content-Type: text/plain\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            "Bad Request";
 
-    size_t res_len = strlen(res);
-    if (res_len > sizeof conn->wbuff) {
-        res_len = sizeof conn->wbuff;
+        memcpy(conn->wbuff, bad_request, sizeof(bad_request) - 1);
+        conn->wlen = sizeof(bad_request) - 1;
+        conn->wsent = 0;
+        conn->state = WRITING;
+        conn->keep_alive = false;
+        conn_write(conn, epfd);
+        return;
     }
 
-    memcpy(conn->wbuff, res, res_len);
-    conn->wlen = res_len;
-    conn->wsent = 0;
-    conn->state = WRITING;
-    conn->keep_alive = true;
-    conn_write(conn, epfd);
+    Response res;
+    response_init(&res);
+
+    const char* conn_header = request_get_header(&conn->req, "Connection");
+    conn->keep_alive = conn_header && strcasecmp(conn_header, "keep-alive") == 0;
+    response_add_header(&res, "Connection", conn->keep_alive ? "keep-alive" : "close");
+
+    if (router_dispatch(&conn->req, &res) != 0) {
+        response_free(&res);
+        response_init(&res);
+        response_set_status(&res, 500, "Internal Server Error");
+        response_add_header(&res, "Connection", "close");
+        response_add_header(&res, "Content-Type", "text/plain; charset=utf-8");
+        response_set_body(&res, "Internal Server Error", strlen("Internal Server Error"));
+        conn->keep_alive = false;
+    }
+
+    conn_build_and_queue_response(conn, epfd, &res);
+    response_free(&res);
 }
 
 Connection* conn_init(fd_t fd) {
@@ -79,9 +140,11 @@ Connection* conn_init(fd_t fd) {
     }
     *conn = (Connection) {
         .fd = fd,
-        .state = WRITING,
+        .state = READING_HEADERS,
         .keep_alive = false,
     };
+
+    request_init(&conn->req);
     return conn;
 }
 

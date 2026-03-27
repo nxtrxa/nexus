@@ -3,6 +3,26 @@
 #include <string.h>
 #include <stdio.h>
 
+static int ensure_capacity(char** buf, size_t* cap, size_t need_len) {
+    if (need_len <= *cap) {
+        return 0;
+    }
+
+    size_t new_cap = *cap;
+    while (new_cap < need_len) {
+        new_cap *= 2;
+    }
+
+    char* new_buf = realloc(*buf, new_cap);
+    if (!new_buf) {
+        return -1;
+    }
+
+    *buf = new_buf;
+    *cap = new_cap;
+    return 0;
+}
+
 void response_init(Response* res) {
     *res = (Response) {
         .status_code = 200,
@@ -52,49 +72,46 @@ void response_set_body(Response *res, const char *body, size_t len) {
 }
 
 char *response_build(const Response *res) {
-    // Estimate size: start with status line + headers + blank line + body
-    size_t size = 256; // rough estimate, we'll grow dynamically
+    size_t size = 256;
     char *buf = malloc(size);
     if (!buf) return NULL;
-    int offset = 0;
+    size_t offset = 0;
     int needed;
 
-    // Status line
     needed = snprintf(buf + offset, size - offset,
                       "HTTP/1.1 %d %s\r\n", res->status_code, res->status_text);
     if (needed < 0) { free(buf); return NULL; }
-    offset += needed;
+    if (ensure_capacity(&buf, &size, offset + (size_t)needed + 1) < 0) { free(buf); return NULL; }
+    needed = snprintf(buf + offset, size - offset,
+                      "HTTP/1.1 %d %s\r\n", res->status_code, res->status_text);
+    if (needed < 0) { free(buf); return NULL; }
+    offset += (size_t)needed;
 
-    // Headers
     for (size_t i = 0; i < res->header_count; i++) {
+        if (ensure_capacity(&buf, &size, offset + strlen(res->headers[i].name) + strlen(res->headers[i].value) + 6) < 0) {
+            free(buf);
+            return NULL;
+        }
         needed = snprintf(buf + offset, size - offset, "%s: %s\r\n",
                           res->headers[i].name, res->headers[i].value);
         if (needed < 0) { free(buf); return NULL; }
-        offset += needed;
-        // If buffer might overflow, we should expand. For simplicity, we'll assume enough space.
-        // In production, we'd realloc as needed.
+        offset += (size_t)needed;
     }
 
-    // Content-Length
     if (res->body) {
+        if (ensure_capacity(&buf, &size, offset + 64) < 0) { free(buf); return NULL; }
         needed = snprintf(buf + offset, size - offset, "Content-Length: %zu\r\n", res->body_len);
         if (needed < 0) { free(buf); return NULL; }
-        offset += needed;
+        offset += (size_t)needed;
     }
 
-    // Blank line
+    if (ensure_capacity(&buf, &size, offset + 3) < 0) { free(buf); return NULL; }
     needed = snprintf(buf + offset, size - offset, "\r\n");
     if (needed < 0) { free(buf); return NULL; }
-    offset += needed;
+    offset += (size_t)needed;
 
-    // Body
     if (res->body && res->body_len > 0) {
-        if (offset + res->body_len >= size) {
-            size = offset + res->body_len + 1;
-            char *new_buf = realloc(buf, size);
-            if (!new_buf) { free(buf); return NULL; }
-            buf = new_buf;
-        }
+        if (ensure_capacity(&buf, &size, offset + res->body_len + 1) < 0) { free(buf); return NULL; }
         memcpy(buf + offset, res->body, res->body_len);
         offset += res->body_len;
     }

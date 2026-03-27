@@ -21,8 +21,8 @@ typedef struct {
 void response_init(Response* res);
 void response_free(Response* res);
 void response_set_status(Response* res, int code, const char* text);
-void responde_add_header(Response* res, const char* key, const char* value);
-void responde_add_body(Response* res, const char* body, const char* len);
+void response_add_header(Response* res, const char* key, const char* value);
+void response_set_body(Response* res, const char* body, size_t len);
 char* response_build(const Response* res);
 
 #endif // RESPONSE_H
