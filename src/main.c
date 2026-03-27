@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    eventloop(s);
+    event_loop(s);
 
     server_destroy(s);
     return 0;

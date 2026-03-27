@@ -6,8 +6,7 @@
 
 enum { SERVER_BACKLOG = SOMAXCONN };
 
-#define server_instance struct server*
-struct server {
+__STRUCT (server) {
     struct sockaddr_in addr;
     socklen_t addr_len;
     fd_t epfd;

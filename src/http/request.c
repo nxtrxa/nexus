@@ -3,8 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
-void request_init(Request* restrict req) {
-    *req = (Request) {
+void request_init(request_instance restrict req) {
+    *req = (struct request) {
         .method = METHOD_UNKNOWN,
         .path = NULL,
         .version = NULL,
@@ -12,7 +12,7 @@ void request_init(Request* restrict req) {
     };
 }
 
-void request_free(Request* restrict req) {
+void request_free(request_instance restrict req) {
     free(req->path);
     free(req->version);
 
@@ -23,20 +23,20 @@ void request_free(Request* restrict req) {
     free(req->headers);
 }
 
-void request_add_header(Request* restrict req, const char* name, const char* value) {
+void request_add_header(request_instance restrict req, const char* name, const char* value) {
     if (req->header_count >= req->header_cap) {
         size_t new_cap = req->header_cap ? req->header_cap * 2 : 16;
-        Header* new_h = realloc(req->headers, new_cap * sizeof(Header));
+        header_instance new_h = realloc(req->headers, new_cap * sizeof(struct request));
         if (!new_h) return;
         req->headers = new_h;
         req->header_cap = new_cap;
     }
-    Header* h = &req->headers[req->header_count++];
+    header_instance h = &req->headers[req->header_count++];
     h->name = strdup(name);
     h->value = strdup(value);
 }
 
-const char* request_get_header(const Request* restrict req, const char* restrict name) {
+const char* request_get_header(const request_instance restrict req, const char* restrict name) {
     for (size_t i = 0; i < req->header_count; ++i) {
         if (strcasecmp(req->headers[i].name, name) == 0) return req->headers[i].value;
     }
