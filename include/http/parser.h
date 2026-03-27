@@ -3,7 +3,7 @@
 
 #include "request.h"
 
-int parse_request(Request*, const char*, size_t);
+int parse_request(request_instance, const char*, size_t);
 
 #endif // PARSER_H
 

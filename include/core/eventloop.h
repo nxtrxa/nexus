@@ -2,16 +2,16 @@
 #define EVENTLOOP_H
 
 #include "core/server.h"
+#include "utils/types.h"
 #include <sys/epoll.h>
 
 enum { MAX_EVENTS = 64 };
 
-#define eventloop_instance
-struct eventloop {
+__STRUCT (event_loop) {
     struct epoll_event ev;
     struct epoll_event events[MAX_EVENTS];
 };
 
-void eventloop(server_instance);
+void event_loop(server_instance);
 
 #endif // EVENTLOOP_H

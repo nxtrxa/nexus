@@ -11,13 +11,15 @@
 #include <sys/epoll.h>
 
 #include "http/request.h"
+#include "utils/types.h"
+#include "utils/attributes.h"
 
 #define conn_reset(conn) do {        \
     (conn)->wlen = 0;                \
     (conn)->rlen = 0;                \
     (conn)->wsent = 0;               \
     (conn)->state = READING_HEADERS; \
-    request_init(&(conn)->req);  \
+    request_init(&(conn)->req);      \
 } while(0)
 
 enum {
@@ -25,24 +27,22 @@ enum {
     READ_BUFFER_SIZE = 4 * 1024,
 };
 
-typedef enum {
+enum __packed__ conn_state {
     READING_HEADERS,
     READING_BODY,
     WRITING,
-} ConnState;
+};
 
-
-#define connection_instance struct connection*
-struct connection {
+__STRUCT (connection) {
     char wbuff[WRITE_BUFFER_SIZE];
     char rbuff[READ_BUFFER_SIZE];
-    ConnState state;
+    enum conn_state state;
     size_t wlen;
     size_t rlen;
     size_t wsent;
     fd_t fd;
     bool keep_alive;
-    Request req;
+    struct request req;
 };
 
 connection_instance conn_init(fd_t);

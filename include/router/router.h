@@ -6,30 +6,33 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define home "./static/home.nex"
-#define auth "./static/auth.nex"
-
+#define __HOME__ "./static/home.nex"
+#define __AUTH__ "./static/auth.nex"
 
 #define ROUTES  \
     X(HOME)     \
-    X(AUTH)     \
+    X(AUTH)
+
+#define DISPATCHERS ROUTES
+
+#define router_constructor(__p)             \
+    (router) {                              \
+        .dispatcher = router_dispatcher,    \
+        .route      = (__p),                \
+    }
 
 #define X(I) I,
-enum { ROUTES };
+enum route { ROUTES };
 #undef X
 
-typedef const char* route_t;
+typedef void (*router_dispatcher_t)(connection_instance);
 
-#define router_instance struct router*
-struct router {
-    route_t (*router_dispatcher_t)(router_instance);
-    route_t routes[];
+__STRUCT (router) {
+    router_dispatcher_t dispatcher;
+    route_t route;
 };
 
-router_instance router_init();
-route_t router_dispatcher(route_t);
-void dispatch_home(connection_instance conn);
-
+void router_dispatcher(connection_instance);
 
 #endif // ROUTER_H
 

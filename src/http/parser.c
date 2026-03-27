@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
-static int parse_method(const char **p, const char *end, HttpMethod *method) {
+static int parse_method(const char **p, const char *end, enum http_method *method) {
     const char *start = *p;
     while (*p < end && **p != ' ' && **p != '\r' && **p != '\n') (*p)++;
     size_t len = *p - start;
@@ -46,7 +46,7 @@ static int parse_version(const char **p, const char *end, char **version) {
     return (*version == NULL) ? -1 : 0;
 }
 
-static int parse_header_line(const char **p, const char *end, Request *req) {
+static int parse_header_line(const char **p, const char *end, request_instance req) {
     const char *line_start = *p;
     const char *colon = NULL;
     while (*p < end && **p != ':' && **p != '\r' && **p != '\n') (*p)++;
@@ -67,7 +67,7 @@ static int parse_header_line(const char **p, const char *end, Request *req) {
     // Add to request
     if (req->header_count >= req->header_cap) {
         size_t new_cap = req->header_cap ? req->header_cap * 2 : 8;
-        Header *new_h = realloc(req->headers, new_cap * sizeof(Header));
+        header_instance new_h = realloc(req->headers, new_cap * sizeof(struct header));
         if (!new_h) {
             free(name); free(value);
             return -1;
@@ -75,7 +75,7 @@ static int parse_header_line(const char **p, const char *end, Request *req) {
         req->headers = new_h;
         req->header_cap = new_cap;
     }
-    Header *h = &req->headers[req->header_count++];
+    header_instance h = &req->headers[req->header_count++];
     h->name = name;
     h->value = value;
 
@@ -85,7 +85,7 @@ static int parse_header_line(const char **p, const char *end, Request *req) {
     return 0;
 }
 
-int parse_request(Request *req, const char *data, size_t len) {
+int parse_request(request_instance req, const char *data, size_t len) {
     const char *p = data;
     const char *end = data + len;
 

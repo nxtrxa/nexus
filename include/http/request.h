@@ -18,28 +18,28 @@
     X(METHOD_CONNECT)
 
 #define X(I) I,
-typedef enum {
+enum http_method {
     HTTP_METHODS
-} HttpMethod;
+};
 #undef X
 
-typedef struct {
+__STRUCT (header) {
     char* name;
     char* value;
-} Header;
+};
 
-typedef struct {
+__STRUCT (request) {
     char* path;
     char* version;
-    Header* headers;
+    header_instance headers;
     size_t header_cap;
     size_t header_count;
-    HttpMethod method;
-} Request;
+    enum http_method method;
+};
 
-void request_init(Request *req);
-void request_free(Request *req);
-void request_add_header(Request* req, const char* name, const char* value);
-http_request_t request_get_header(const Request* req, http_request_t name);
+void request_init(request_instance req);
+void request_free(request_instance req);
+void request_add_header(request_instance req, const char* name, const char* value);
+http_request_t request_get_header(const request_instance req, http_request_t name);
 
 #endif // REQUEST_H

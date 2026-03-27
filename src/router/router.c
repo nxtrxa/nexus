@@ -1,30 +1,14 @@
 #include "router/router.h"
 #include "utils/attributes.h"
+#include "router/handlers.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-static int send_file(FILE* f, fd_t fd, char* buff, size_t* len) {
+static int send_file(connection_instance conn, FILE* f) {
+    int read = 0;
     int sent = 0;
-    int left = *len;
-    int n;
-
-    while ((sent = fread(buff, sizeof *buff, left, f) > 0) && (sent < left)) {
-        n = send(fd, buff, sent, 0);
-        if (n == -1 ) break;
-        sent += n;
-        left -= n;
-    }
-    *len = sent;
-    return (n == -1) ? -1 : 0;
-}
-
-void dispatch_home(connection_instance conn) {
-    FILE* home_page = fopen(home, "r");
-    if (!home_page) {
-        perror("Error opening home page");
-        return;
-    }
+    int left = conn->wlen;
 
     http_res_t header =
         "HTTP/1.1 200 OK\r\n"
@@ -35,29 +19,45 @@ void dispatch_home(connection_instance conn) {
     conn->state = WRITING;
     conn->keep_alive = true;
     send(conn->fd, header, strlen(header), 0);
-    if (send_file(home_page, conn->fd, conn->wbuff, &conn->wlen) < 0) {
-        perror("Error sending home page");
-        return;
+    while ((read = fread(conn->wbuff, conn->wlen, left, f) > 0) && (read < left)) {
+        sent = send(conn->fd, conn->wbuff, read, 0);
+        if (sent == -1 ) break;
+        sent += sent;
+        left -= sent;
     }
-    fclose(home_page);
+    conn->wlen = sent;
+    return (sent == -1) ? -1 : 0;
 }
 
-// #define X(I) [(I)] = lower((#I)),
-// static route_t routes_table[] = {
-//     ROUTES
-// };
-// #undef X
-//
-// #define X(I) [(I)] = dispatch_##I,
-// static router_dispatcher_t dispatch_table[] {
-//     ROUTES
-// };
-// #undef X
-//
-// router_instance router_construct() {
-//
-// }
-//
-// route_t router_dispatch() {
-//
-// }
+#define X(I)                                              \
+    static void dispatch_##I(connection_instance conn) {  \
+        FILE* I##_page = fopen(__##I##__, "r");           \
+        if (!I##_page) {                                  \
+            perror("Error opening " #I " page");          \
+            return;                                       \
+        }                                                 \
+        if (send_file(conn, I##_page) < 0) {                  \
+            perror("Error sending " #I " page");              \
+            return;                                           \
+        }                                                     \
+        fclose(I##_page);                                     \
+    }
+
+DISPATCHERS
+#undef X
+
+#define X(I) [(I)] = dispatch_##I,
+router_dispatcher_t dispatch_table[] = {
+    DISPATCHERS
+};
+#undef X
+
+#define DISPATCH(I) dispatch_table[(I)](conn)
+
+#define X(M) case METHOD_##M: M##_handler(conn); return;
+__inline__ void router_dispatcher(connection_instance conn) {
+    switch (conn->req.method) {
+        HTTP_HANDLERS
+    }
+}
+#undef X

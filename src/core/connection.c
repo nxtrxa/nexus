@@ -3,12 +3,12 @@
 
 #include <errno.h>
 
-static void conn_close(connection_instance restrict conn) {
+static void conn_close(connection_instance  conn) {
     close(conn->fd);
     free(conn);
 }
 
-static void conn_write(connection_instance restrict conn, fd_t epfd) {
+static void conn_write(connection_instance  conn, fd_t epfd) {
     while (conn->wsent < conn->wlen) {
         ssize_t n = write(conn->fd, conn->wbuff + conn->wsent, conn->wlen - conn->wsent);
         if (n > 0) {
@@ -45,13 +45,13 @@ static void conn_write(connection_instance restrict conn, fd_t epfd) {
     }
 }
 
-static void conn_process(connection_instance restrict conn, fd_t epfd) {
+static void conn_process(connection_instance conn, fd_t epfd) {
     char* end_headers = strstr(conn->rbuff, "\r\n\r\n");
     if (end_headers == NULL) {
         return;
     }
 
-    dispatch_home(conn);
+    router_dispatcher(conn);
     conn_write(conn, epfd);
 }
 
@@ -64,13 +64,13 @@ connection_instance conn_init(fd_t fd) {
     }
     *conn = (struct connection) {
         .fd = fd,
-            .state = READING_HEADERS,
-            .keep_alive = false,
+        .state = READING_HEADERS,
+        .keep_alive = false,
     };
     return conn;
 }
 
-void conn_event_handler(connection_instance restrict conn, uint32_t events, fd_t epfd) {
+void conn_event_handler(connection_instance conn, uint32_t events, fd_t epfd) {
     if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
         conn_close(conn);
         return;

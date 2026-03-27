@@ -3,8 +3,8 @@
 
 #include <errno.h>
 
-void eventloop(server_instance __s) {
-    struct eventloop el = {
+void event_loop(server_instance __s) {
+    struct event_loop el = {
         .ev = {
             .events = EPOLLIN,
             .data.fd = __s->fd,
